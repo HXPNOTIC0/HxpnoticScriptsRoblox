@@ -311,7 +311,7 @@ task.spawn(function()
     end
 end)
 local autoFood30 = Tabs.Farming:AddToggle("autoFood30", {
-Title = "Auto Food 30s Cycle",
+Title = "Auto Food Cycle",
 Default = false
 })
 
@@ -325,7 +325,7 @@ while true do
     task.wait(1)
 
     if autoFood30.Value then
-        local countdown = 30  -- cada 30 segundos
+        local countdown = 27  -- cada 30 segundos
 
         while autoFood30.Value and countdown > 0 do
             task.wait(1)
