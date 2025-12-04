@@ -231,11 +231,10 @@ Tabs.Farming:CreateButton({Title = "Place 15x15 Plantboxes (225)", Callback = fu
 Tabs.Farming:CreateButton({Title = "Place 10x10 Plantboxes (100)", Callback = function() placestructure(10) end })
 Tabs.Farming:CreateButton({Title = "Place 5x5 Plantboxes (25)", Callback = function() placestructure(5) end })
 -- =============================================================================
--- SISTEMA DE TWEEN LEYENDO ARCHIVO FAR1.JSON EN FORMATO PERSONALIZADO
+-- SISTEMA DE TWEEN LEYENDO ARCHIVO FAR1.JSON EN FORMATO PERSONALIZADO (OPTIMIZADO)
 -- =============================================================================
 
 local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
@@ -263,7 +262,6 @@ local function LoadRoute()
     local raw = readfile(RouteFile)
     local data = HttpService:JSONDecode(raw)
 
-    -- Verificar que existan posiciones
     if not data.positions or typeof(data.positions) ~= "table" then
         warn("El archivo FAR1.json no contiene 'positions'")
         return {}
@@ -278,22 +276,26 @@ local tweenFAR = Tabs.Farming:AddToggle("tweenFAR", {
     Default = false
 })
 
--- Velocidad del Tween AJUSTADA A 16
+-- Velocidad del Tween
 local TweenSpeed = 16
 
--- Función Tween
-local function TweenTo(pos)
-    local distance = (hrp.Position - pos).Magnitude
+-- Función para mover HRP suavemente sin teletransportar
+local function SmoothMoveTo(targetPos)
+    local startPos = hrp.Position
+    local distance = (targetPos - startPos).Magnitude
     local duration = distance / TweenSpeed
 
-    local tween = TweenService:Create(
-        hrp,
-        TweenInfo.new(duration, Enum.EasingStyle.Linear),
-        {CFrame = CFrame.new(pos)}
-    )
+    local stepTime = 0.03 -- tiempo entre cada pequeño paso
+    local steps = math.max(1, math.floor(duration / stepTime))
 
-    tween:Play()
-    tween.Completed:Wait()
+    for i = 1, steps do
+        if not tweenFAR.Value then return end
+
+        local alpha = i / steps
+        local newPos = startPos:Lerp(targetPos, alpha)
+        hrp.CFrame = CFrame.new(newPos)
+        task.wait(stepTime)
+    end
 end
 
 -- LOOP PRINCIPAL
@@ -301,17 +303,16 @@ task.spawn(function()
     while task.wait(0.15) do
         if tweenFAR.Value then
             local Route = LoadRoute()
-
             for _, point in ipairs(Route) do
                 if not tweenFAR.Value then break end
-
-                TweenTo(Vector3.new(point.X, point.Y, point.Z))
+                SmoothMoveTo(Vector3.new(point.X, point.Y, point.Z))
             end
         end
     end
 end)
+-- AUTO FOOD 30s CYCLE
 local autoFood30 = Tabs.Farming:AddToggle("autoFood30", {
-Title = "Auto Food Cycle",
+Title = "Auto Food 30s Cycle",
 Default = false
 })
 
@@ -325,7 +326,7 @@ while true do
     task.wait(1)
 
     if autoFood30.Value then
-        local countdown = 27  -- cada 30 segundos
+        local countdown = 30  -- cada 30 segundos
 
         while autoFood30.Value and countdown > 0 do
             task.wait(1)
