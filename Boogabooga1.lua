@@ -10,8 +10,8 @@ local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercon
 
 -- Creación de la ventana principal de la interfaz
 local Window = Library:CreateWindow{
-    Title = "Hxpnotic Hub -- Booga Booga Reborn",
-    SubTitle = "BOOGA BOOGA V.1",
+    Title = "HXPNOTIC HUB",
+    SubTitle = "BOOGA BOOGA REBORN",
     TabWidth = 160,
     Size = UDim2.fromOffset(1300, 800),
     Resize = true,
@@ -230,6 +230,136 @@ Tabs.Farming:CreateButton({Title = "Place 16x16 Plantboxes (256)", Callback = fu
 Tabs.Farming:CreateButton({Title = "Place 15x15 Plantboxes (225)", Callback = function() placestructure(15) end })
 Tabs.Farming:CreateButton({Title = "Place 10x10 Plantboxes (100)", Callback = function() placestructure(10) end })
 Tabs.Farming:CreateButton({Title = "Place 5x5 Plantboxes (25)", Callback = function() placestructure(5) end })
+-- ================================================
+-- ESP PARA MOSTRAR TODAS LAS COORDENADAS DEL FAR1.JSON
+-- ================================================
+
+local espFAR = Tabs.Farming:AddToggle("espFAR", {
+    Title = "Mostrar ESP de FAR1.json",
+    Default = false
+})
+
+local HttpService = game:GetService("HttpService")
+local cam = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local RouteFile = "FAR/FAR1.json"
+local ESP_POINTS = {}
+
+-- ============================
+-- RANGOS DE VELOCIDAD 21
+-- ============================
+
+local SpeedRanges = {
+    {5, 7},
+    {17, 29},
+    {36, 42},
+    {48, 60},
+    {67, 93},
+    {99, 112},
+    {128, 159},
+    {165, 186},
+    {195, 231},
+    {240, 295},
+    {302, 324},
+    {342, 363},
+    {369, 415},
+    {421, 430},
+    {436, 452},
+    {459, 477},
+    {488, 520},
+    {527, 559},
+    {574, 576},
+    {581, 620},
+}
+
+local function IsTurboIndex(i)
+    for _, range in ipairs(SpeedRanges) do
+        if i >= range[1] and i <= range[2] then
+            return true
+        end
+    end
+    return false
+end
+
+-- ---- FUNCIONES ----
+
+local function LoadRoute()
+    local raw = readfile(RouteFile)
+    local data = HttpService:JSONDecode(raw)
+
+    if not data.positions or typeof(data.positions) ~= "table" then
+        warn("El archivo FAR1.json no contiene posiciones.")
+        return {}
+    end
+
+    return data.positions
+end
+
+local function CreatePointESP(index, pos)
+    local isTurbo = IsTurboIndex(index)
+
+    local dot = Drawing.new("Circle")
+    dot.Visible = true
+    dot.Color = isTurbo and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 255)
+    dot.Thickness = 2
+    dot.NumSides = 20
+    dot.Filled = true
+    dot.Radius = 4
+
+    local text = Drawing.new("Text")
+    text.Visible = true
+    text.Size = 14
+    text.Center = true
+    text.Color = isTurbo and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(255, 255, 255)
+    text.Text = tostring(index)
+
+    ESP_POINTS[#ESP_POINTS+1] = {dot = dot, text = text, position = pos}
+end
+
+local function ClearESP()
+    for _, v in ipairs(ESP_POINTS) do
+        v.dot:Remove()
+        v.text:Remove()
+    end
+    ESP_POINTS = {}
+end
+
+-- ---- ACTIVACIÓN / DESACTIVACIÓN ----
+
+espFAR:OnChanged(function(state)
+    if state then
+        ClearESP()
+
+        local route = LoadRoute()
+        for i, point in ipairs(route) do
+            CreatePointESP(i, Vector3.new(point.X, point.Y, point.Z))
+        end
+    else
+        ClearESP()
+    end
+end)
+
+-- ---- LOOP PARA ACTUALIZAR PROYECCIÓN ----
+
+RunService.RenderStepped:Connect(function()
+    if not espFAR.Value then return end
+
+    for _, v in ipairs(ESP_POINTS) do
+        local screenPos, onScreen = cam:WorldToViewportPoint(v.position)
+
+        if onScreen then
+            v.dot.Visible = true
+            v.text.Visible = true
+
+            v.dot.Position = Vector2.new(screenPos.X, screenPos.Y)
+            v.text.Position = Vector2.new(screenPos.X, screenPos.Y - 12)
+        else
+            v.dot.Visible = false
+            v.text.Visible = false
+        end
+    end
+end)
 -- =============================================================================
 -- SISTEMA DE TWEEN LEYENDO ARCHIVO FAR1.JSON EN FORMATO PERSONALIZADO (OPTIMIZADO)
 -- =============================================================================
@@ -270,22 +400,60 @@ local function LoadRoute()
     return data.positions
 end
 
--- Toggle en tu UI
+-- Toggle UI
 local tweenFAR = Tabs.Farming:AddToggle("tweenFAR", {
     Title = "Tween FAR1.json Route",
     Default = false
 })
 
--- Velocidad del Tween
-local TweenSpeed = 16
+-- ============================
+-- SISTEMA DE VELOCIDADES DINÁMICAS
+-- ============================
 
--- Función para mover HRP suavemente sin teletransportar
-local function SmoothMoveTo(targetPos)
+local SpeedRanges = {
+    {5, 7},
+    {17, 29},
+    {36, 42},
+    {48, 60},
+    {67, 93},
+    {99, 112},
+    {128, 159},
+    {165, 186},
+    {195, 231},
+    {240, 295},
+    {302, 324},
+    {342, 363},
+    {369, 415},
+    {421, 430},
+    {436, 452},
+    {459, 477},
+    {488, 520},
+    {527, 559},
+    {574, 576},
+    {581, 620},
+}
+
+local function GetSpeedForIndex(i)
+    for _, range in ipairs(SpeedRanges) do
+        local minI = range[1]
+        local maxI = range[2]
+        if i >= minI and i <= maxI then
+            return 21 -- velocidad rápida
+        end
+    end
+    return 16 -- velocidad normal
+end
+
+-- ============================
+-- MOVIMIENTO SUAVE
+-- ============================
+
+local function SmoothMoveTo(targetPos, speed)
     local startPos = hrp.Position
     local distance = (targetPos - startPos).Magnitude
-    local duration = distance / TweenSpeed
+    local duration = distance / speed
 
-    local stepTime = 0.03 -- tiempo entre cada pequeño paso
+    local stepTime = 0.03
     local steps = math.max(1, math.floor(duration / stepTime))
 
     for i = 1, steps do
@@ -294,18 +462,26 @@ local function SmoothMoveTo(targetPos)
         local alpha = i / steps
         local newPos = startPos:Lerp(targetPos, alpha)
         hrp.CFrame = CFrame.new(newPos)
+
         task.wait(stepTime)
     end
 end
 
+-- ============================
 -- LOOP PRINCIPAL
+-- ============================
+
 task.spawn(function()
     while task.wait(0.15) do
         if tweenFAR.Value then
             local Route = LoadRoute()
-            for _, point in ipairs(Route) do
+
+            for index, point in ipairs(Route) do
                 if not tweenFAR.Value then break end
-                SmoothMoveTo(Vector3.new(point.X, point.Y, point.Z))
+
+                local speed = GetSpeedForIndex(index)
+
+                SmoothMoveTo(Vector3.new(point.X, point.Y, point.Z), speed)
             end
         end
     end
@@ -1232,9 +1408,9 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 -- Inicialización final
 Window:SelectTab(1)
 Library:Notify{
-    Title = "Herkle Hub",
-    Content = "Loaded, Enjoy!",
-    Duration = 2
+    Title = "Hxpnotoc Hub",
+    Content = "Cargado, Disfruta!",
+    Duration = 1
 }
 SaveManager:LoadAutoloadConfig()
 print("¡Listo, Disfruta del script!")
