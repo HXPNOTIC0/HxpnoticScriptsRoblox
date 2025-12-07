@@ -122,8 +122,35 @@ end)
 
 
 ---------------------------------------------------------
--- RESOURCE AURA (TU LÓGICA ORIGINAL) 
--- rango = 20 | targets = 4 | cooldown = 0.1
+-- MOUNTAIN CLIMBER (anti-atranques)
+---------------------------------------------------------
+
+task.spawn(function()
+	while true do
+		if _G.GLOBAL_ON then
+			pcall(function()
+				local rayOrigin = hrp.Position
+				local rayDirection = Vector3.new(0, -4, 0)
+
+				local params = RaycastParams.new()
+				params.FilterType = Enum.RaycastFilterType.Blacklist
+				params.FilterDescendantsInstances = {plr.Character}
+
+				local result = workspace:Raycast(rayOrigin, rayDirection, params)
+
+				if result and result.Normal.Y < 0.98 then
+					hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.25, 0)
+				end
+			end)
+		end
+
+		task.wait(0.05)
+	end
+end)
+
+
+---------------------------------------------------------
+-- RESOURCE AURA (range=20, targets=4, cooldown=0.1)
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -184,7 +211,7 @@ end)
 
 
 ---------------------------------------------------------
--- TWEEN FAR1.json – Velocidad fija 21.4 + Pausas
+-- TWEEN FAR1.json (Velocidad fija 21 + Pausas)
 ---------------------------------------------------------
 
 if not isfolder("FAR") then
@@ -197,7 +224,7 @@ if not isfile(RouteFile) then
     writefile(RouteFile, HttpService:JSONEncode({positions={}, waits={}}))
 end
 
-local FIXED_SPEED = 21.4
+local FIXED_SPEED = 21
 
 local PAUSE_POINTS = {
     [11] = true,
@@ -251,7 +278,7 @@ end)
 
 
 ---------------------------------------------------------
--- ANTI AFK INTEGRADO
+-- ANTI AFK
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -260,4 +287,4 @@ task.spawn(function()
     ))()
 end)
 
-print("SCRIPT COMPLETO FINAL ✔ (Todo funcionando)")
+print("SCRIPT FINAL CON VELOCIDAD 21 + MOUNTAIN CLIMBER ✔")
