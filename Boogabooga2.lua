@@ -45,7 +45,6 @@ Button.MouseButton1Click:Connect(function()
     last = tick()
 end)
 
-
 ---------------------------------------------------------
 -- VARIABLES / SERVICIOS
 ---------------------------------------------------------
@@ -58,9 +57,8 @@ local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-
 ---------------------------------------------------------
--- AUTO FOOD (30s)
+-- AUTO FOOD 30S
 ---------------------------------------------------------
 
 local function FireEat()
@@ -86,7 +84,6 @@ task.spawn(function()
         end
     end
 end)
-
 
 ---------------------------------------------------------
 -- AUTO PICKUP RAW GOLD
@@ -120,19 +117,39 @@ task.spawn(function()
     end
 end)
 
+---------------------------------------------------------
+-- MOUNTAIN CLIMBER (ANTI-ATRANQUES)
+---------------------------------------------------------
 
+task.spawn(function()
+	while true do
+		if _G.GLOBAL_ON then
+			pcall(function()
+				local rayOrigin = hrp.Position
+				local rayDirection = Vector3.new(0, -4, 0)
+
+				local params = RaycastParams.new()
+				params.FilterType = Enum.RaycastFilterType.Blacklist
+				params.FilterDescendantsInstances = {plr.Character}
+
+				local result = workspace:Raycast(rayOrigin, rayDirection, params)
+
+				if result and result.Normal.Y < 0.98 then
+					hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.25, 0)
+				end
+			end)
+		end
+		task.wait(0.05)
+	end
+end)
 
 ---------------------------------------------------------
--- RESOURCE AURA (TU LÓGICA ORIGINAL)
--- range = 20 | targets = 4 | cooldown = 0.1
+-- RESOURCE AURA (range=20, targets=4, cooldown=0.1)
 ---------------------------------------------------------
 
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then
-            task.wait(0.1)
-            continue
-        end
+        if not _G.GLOBAL_ON then task.wait(0.1) continue end
 
         local range = 20
         local targetCount = 4
@@ -152,12 +169,12 @@ task.spawn(function()
             end
         end
 
-        for _, res in pairs(allresources) do
+        for _, res in ipairs(allresources) do
             if res:IsA("Model") and res:GetAttribute("EntityID") then
                 local eid = res:GetAttribute("EntityID")
-                local ppart = res.PrimaryPart or res:FindFirstChildWhichIsA("BasePart")
-                if ppart then
-                    local dist = (ppart.Position - hrp.Position).Magnitude
+                local p = res.PrimaryPart or res:FindFirstChildWhichIsA("BasePart")
+                if p then
+                    local dist = (p.Position - hrp.Position).Magnitude
                     if dist <= range then
                         table.insert(targets, {eid=eid, dist=dist})
                     end
@@ -166,34 +183,38 @@ task.spawn(function()
         end
 
         if #targets > 0 then
-            table.sort(targets, function(a,b)
-                return a.dist < b.dist
-            end)
-
-            local selectedTargets = {}
+            table.sort(targets, function(a,b) return a.dist < b.dist end)
+            local selected = {}
             for i = 1, math.min(targetCount, #targets) do
-                table.insert(selectedTargets, targets[i].eid)
+                selected[#selected+1] = targets[i].eid
             end
-
-            packets.SwingTool.send(selectedTargets)
+            packets.SwingTool.send(selected)
         end
 
         task.wait(cooldown)
     end
 end)
 
-
-
 ---------------------------------------------------------
--- TWEEN FAR1.json – Velocidad 21 + Anti Descarrilamiento
--- Mountain Climber integrado
+-- SISTEMA DE TWEEN FAR1.json (VELOCIDAD 21 + PAUSAS + ANTI-ATASCO)
 ---------------------------------------------------------
 
-if not isfolder("FAR") then makefolder("FAR") end
+-- Crear carpeta FAR si no existe
+if not isfolder("FAR") then
+    makefolder("FAR")
+end
 
 local RouteFile = "FAR/FAR1.json"
+local LastPointFile = "FAR/lastpoint.txt"
+
+-- Crear archivo FAR1.json si no existe
 if not isfile(RouteFile) then
     writefile(RouteFile, HttpService:JSONEncode({positions={}, waits={}}))
+end
+
+-- Crear archivo lastpoint.txt si no existe
+if not isfile(LastPointFile) then
+    writefile(LastPointFile, "1")
 end
 
 local FIXED_SPEED = 21
@@ -205,95 +226,97 @@ local PAUSE_POINTS = {
     [577] = true
 }
 
+-- Leer ruta
 local function LoadRoute()
-    return HttpService:JSONDecode(readfile(RouteFile)).positions or {}
+    local raw = readfile(RouteFile)
+    local data = HttpService:JSONDecode(raw)
+    return data.positions or {}
 end
 
-local function SmoothMoveToStable(targetPos)
-    local startPos = hrp.Position
-    local dist = (targetPos - startPos).Magnitude
+-- Guardar último punto
+local function SaveLastPoint(i)
+    writefile(LastPointFile, tostring(i))
+end
+
+-- Leer último punto guardado
+local function LoadLastPoint()
+    local n = tonumber(readfile(LastPointFile)) or 1
+    return math.max(1, n)
+end
+
+-- Movimiento estable
+local function SmoothMoveTo(goal)
+    local start = hrp.Position
+    local dist = (goal - start).Magnitude
     local duration = dist / FIXED_SPEED
 
-    local step = 0.035
-    local steps = math.max(1, math.floor(duration / step))
+    local step = 0.03
+    local cycles = math.max(1, math.floor(duration / step))
 
-    local lastPos = hrp.Position
-    local stuckTimer = 0
+    for i = 1, cycles do
+        if not _G.GLOBAL_ON then return end
 
-    for i = 1, steps do
-        if not _G.GLOBAL_ON then return false end
+        local alpha = i / cycles
+        local newPos = start:Lerp(goal, alpha)
 
-        -- Mountain Climber
-        hrp.Velocity = Vector3.new(0, 40, 0)
+        -- Estabilizador anti-desvío
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.CFrame = CFrame.new(newPos, newPos + hrp.CFrame.LookVector)
 
-        local alpha = i / steps
-        hrp.CFrame = CFrame.new(startPos:Lerp(targetPos, alpha))
         task.wait(step)
-
-        local moved = (hrp.Position - lastPos).Magnitude
-        if moved < 0.03 then
-            stuckTimer += step
-            if stuckTimer >= 0.5 then
-                return "STUCK"
-            end
-        else
-            stuckTimer = 0
-        end
-
-        lastPos = hrp.Position
-
-        -- Desviación del camino
-        if (hrp.Position - targetPos).Magnitude > 4 then
-            return "DEVIATED"
-        end
     end
-
-    return "OK"
 end
 
+---------------------------------------------------------
+-- EJECUTOR DEL TWEEN (Con anti-atasco y recuperación)
+---------------------------------------------------------
 
 task.spawn(function()
     while true do
         if not _G.GLOBAL_ON then task.wait(0.1) continue end
 
         local route = LoadRoute()
-        local lastGood = 1
+        local index = LoadLastPoint()
+        local lastProgress = tick()
 
-        for idx = 1, #route do
+        for i = index, #route do
             if not _G.GLOBAL_ON then break end
 
-            local p = route[idx]
+            local p = route[i]
             local target = Vector3.new(p.X, p.Y, p.Z)
 
-            local tries = 0
-            local maxTries = 3
+            SmoothMoveTo(target)
 
-            ::retry::
-            local result = SmoothMoveToStable(target)
+            -- Guardar progreso
+            SaveLastPoint(i)
 
-            if result == "OK" then
-                if PAUSE_POINTS[idx] then task.wait(1) end
-                lastGood = idx
-                continue
+            -- Pausa especial
+            if PAUSE_POINTS[i] then task.wait(1) end
+
+            -- Sistema anti-atasco
+            if tick() - lastProgress >= 240 then
+                -- 4 minutos sin avanzar
+                _G.GLOBAL_ON = false
+                Button.Text = "OFF"
+                Button.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+
+                task.wait(15)
+
+                -- Volver a activar
+                _G.GLOBAL_ON = true
+                Button.Text = "ON"
+                Button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+
+                break
             end
 
-            -- Retrocede al último bueno
-            if lastGood > 1 then
-                local back = route[lastGood]
-                hrp.CFrame = CFrame.new(back.X, back.Y, back.Z)
-                task.wait(0.15)
-            end
-
-            tries += 1
-            if tries < maxTries then goto retry end
+            lastProgress = tick()
         end
     end
 end)
 
-
-
 ---------------------------------------------------------
--- ANTI AFK INTEGRADO
+-- ANTI AFK
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -302,4 +325,4 @@ task.spawn(function()
     ))()
 end)
 
-print("SCRIPT COMPLETO FINAL ✔ (TODO FUNCIONANDO PERFECTO)")
+print("SCRIPT OPTIMIZADO ✔ Movimiento estable ✔ Guarda progreso ✔ Anti-atasco ✔")
