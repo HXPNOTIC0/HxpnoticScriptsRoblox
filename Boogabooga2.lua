@@ -16,7 +16,7 @@ ScreenGui.ResetOnSpawn = false
 local Button = Instance.new("TextButton")
 Button.Parent = ScreenGui
 Button.Size = UDim2.new(0, 140, 0, 50)
-Button.Position = UDim2.new(0.5, -70, 0.7, 0) -- ✔ FIX REALIZADO
+Button.Position = UDim2.new(0.5, -70, 0.7, 0)
 Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 Button.TextColor3 = Color3.fromRGB(255, 255, 255)
 Button.Text = "OFF"
@@ -45,6 +45,7 @@ Button.MouseButton1Click:Connect(function()
     last = tick()
 end)
 
+
 ---------------------------------------------------------
 -- VARIABLES / SERVICIOS
 ---------------------------------------------------------
@@ -56,6 +57,7 @@ local HttpService = game:GetService("HttpService")
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
+
 
 ---------------------------------------------------------
 -- AUTO FOOD 30S
@@ -84,6 +86,7 @@ task.spawn(function()
         end
     end
 end)
+
 
 ---------------------------------------------------------
 -- AUTO PICKUP RAW GOLD
@@ -117,32 +120,34 @@ task.spawn(function()
     end
 end)
 
+
 ---------------------------------------------------------
 -- MOUNTAIN CLIMBER (anti-atranques)
 ---------------------------------------------------------
 
 task.spawn(function()
-    while true do
-        if _G.GLOBAL_ON then
-            pcall(function()
-                local rayOrigin = hrp.Position
-                local rayDirection = Vector3.new(0, -4, 0)
+	while true do
+		if _G.GLOBAL_ON then
+			pcall(function()
+				local rayOrigin = hrp.Position
+				local rayDirection = Vector3.new(0, -4, 0)
 
-                local params = RaycastParams.new()
-                params.FilterType = Enum.RaycastFilterType.Blacklist
-                params.FilterDescendantsInstances = {plr.Character}
+				local params = RaycastParams.new()
+				params.FilterType = Enum.RaycastFilterType.Blacklist
+				params.FilterDescendantsInstances = {plr.Character}
 
-                local result = workspace:Raycast(rayOrigin, rayDirection, params)
+				local result = workspace:Raycast(rayOrigin, rayDirection, params)
 
-                if result and result.Normal.Y < 0.98 then
-                    hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.25, 0)
-                end
-            end)
-        end
+				if result and result.Normal.Y < 0.98 then
+					hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.25, 0)
+				end
+			end)
+		end
 
-        task.wait(0.05)
-    end
+		task.wait(0.05)
+	end
 end)
+
 
 ---------------------------------------------------------
 -- RESOURCE AURA (range=20, targets=4, cooldown=0.1)
@@ -150,7 +155,10 @@ end)
 
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then task.wait(0.1) continue end
+        if not _G.GLOBAL_ON then
+            task.wait(0.1)
+            continue
+        end
 
         local range = 20
         local targetCount = 4
@@ -170,12 +178,12 @@ task.spawn(function()
             end
         end
 
-        for _, res in ipairs(allresources) do
+        for _, res in pairs(allresources) do
             if res:IsA("Model") and res:GetAttribute("EntityID") then
                 local eid = res:GetAttribute("EntityID")
-                local p = res.PrimaryPart or res:FindFirstChildWhichIsA("BasePart")
-                if p then
-                    local dist = (p.Position - hrp.Position).Magnitude
+                local ppart = res.PrimaryPart or res:FindFirstChildWhichIsA("BasePart")
+                if ppart then
+                    local dist = (ppart.Position - hrp.Position).Magnitude
                     if dist <= range then
                         table.insert(targets, {eid=eid, dist=dist})
                     end
@@ -184,21 +192,26 @@ task.spawn(function()
         end
 
         if #targets > 0 then
-            table.sort(targets, function(a,b) return a.dist < b.dist end)
-            local selected = {}
+            table.sort(targets, function(a,b)
+                return a.dist < b.dist
+            end)
+
+            local selectedTargets = {}
             for i = 1, math.min(targetCount, #targets) do
-                selected[#selected+1] = targets[i].eid
+                table.insert(selectedTargets, targets[i].eid)
             end
-            packets.SwingTool.send(selected)
+
+            packets.SwingTool.send(selectedTargets)
         end
 
         task.wait(cooldown)
     end
 end)
 
+
+
 ---------------------------------------------------------
--- SISTEMA TWEEN FAR1.json
--- LOOP INFINITO + ANTI-BUG (4 REINTENTOS)
+-- TWEEN FAR1.json (Velocidad fija 21 + Pausas + Loop infinito)
 ---------------------------------------------------------
 
 if not isfolder("FAR") then
@@ -221,12 +234,13 @@ local PAUSE_POINTS = {
 }
 
 local function LoadRoute()
-    local content = readfile(RouteFile)
-    local data = HttpService:JSONDecode(content)
+    local raw = readfile(RouteFile)
+    local data = HttpService:JSONDecode(raw)
     return data.positions or {}
 end
 
--- Movimiento estable
+
+-- Movimiento exacto y perfecto
 local function SmoothMoveTo(pos)
     local start = hrp.Position
     local dist = (pos - start).Magnitude
@@ -238,8 +252,7 @@ local function SmoothMoveTo(pos)
     for i = 1, cycles do
         if not _G.GLOBAL_ON then return false end
 
-        local alpha = i / cycles
-        local newPos = start:Lerp(pos, alpha)
+        local newPos = start:Lerp(pos, i / cycles)
 
         hrp.AssemblyLinearVelocity = Vector3.zero
         hrp.AssemblyAngularVelocity = Vector3.zero
@@ -248,52 +261,37 @@ local function SmoothMoveTo(pos)
         task.wait(step)
     end
 
-    return (hrp.Position - pos).Magnitude <= 5
+    hrp.CFrame = CFrame.new(pos, pos + hrp.CFrame.LookVector)
+    return true
 end
 
----------------------------------------------------------
--- EJECUTOR DEL TWEEN (LOOP INFINITO + REINTENTOS)
----------------------------------------------------------
 
+-- Recorrido infinito
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then task.wait(0.1) continue end
+        if not _G.GLOBAL_ON then 
+            task.wait(0.1)
+            continue
+        end
 
         local route = LoadRoute()
 
-        for i = 1, #route do
+        for idx, p in ipairs(route) do
             if not _G.GLOBAL_ON then break end
 
-            local p = route[i]
-            local target = Vector3.new(p.X, p.Y, p.Z)
+            local ok = SmoothMoveTo(Vector3.new(p.X, p.Y, p.Z))
+            if not ok then break end
 
-            local success = SmoothMoveTo(target)
-
-            if not success then
-                warn("❌ Error en punto " .. i .. " → reintentando...")
-
-                local retries = 0
-                local ok = false
-
-                while retries < 4 and not ok do
-                    retries += 1
-                    task.wait(0.2)
-
-                    if i > 1 then
-                        local prev = route[i-1]
-                        hrp.CFrame = CFrame.new(prev.X, prev.Y, prev.Z)
-                    end
-
-                    ok = SmoothMoveTo(target)
+            if PAUSE_POINTS[idx] then
+                for i = 1, 10 do
+                    if not _G.GLOBAL_ON then break end
+                    task.wait(0.1)
                 end
-            end
-
-            if PAUSE_POINTS[i] then
-                task.wait(1)
             end
         end
     end
 end)
+
 
 ---------------------------------------------------------
 -- ANTI AFK
@@ -305,4 +303,4 @@ task.spawn(function()
     ))()
 end)
 
-print("SCRIPT FINAL ✔ CORREGIDO ✔ LOOP ✔ ESTABLE ✔")
+print("SCRIPT FINAL ✔ RUTA INFINITA ✔ EXACTO ✔ SIN LASTPOINT ✔")
