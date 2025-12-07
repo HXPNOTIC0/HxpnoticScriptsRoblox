@@ -16,7 +16,7 @@ ScreenGui.ResetOnSpawn = false
 local Button = Instance.new("TextButton")
 Button.Parent = ScreenGui
 Button.Size = UDim2.new(0, 140, 0, 50)
-Button.Position = UDim.new(0.5, -70), UDim.new(0.7, 0)
+Button.Position = UDim2.new(0.5, -70, 0.7, 0) -- ✔ FIX REALIZADO
 Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 Button.TextColor3 = Color3.fromRGB(255, 255, 255)
 Button.Text = "OFF"
@@ -57,7 +57,6 @@ local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-
 ---------------------------------------------------------
 -- AUTO FOOD 30S
 ---------------------------------------------------------
@@ -85,7 +84,6 @@ task.spawn(function()
         end
     end
 end)
-
 
 ---------------------------------------------------------
 -- AUTO PICKUP RAW GOLD
@@ -119,7 +117,6 @@ task.spawn(function()
     end
 end)
 
-
 ---------------------------------------------------------
 -- MOUNTAIN CLIMBER (anti-atranques)
 ---------------------------------------------------------
@@ -146,7 +143,6 @@ task.spawn(function()
         task.wait(0.05)
     end
 end)
-
 
 ---------------------------------------------------------
 -- RESOURCE AURA (range=20, targets=4, cooldown=0.1)
@@ -200,10 +196,9 @@ task.spawn(function()
     end
 end)
 
-
 ---------------------------------------------------------
--- SISTEMA TWEEN FAR1.json SIN GUARDAR PUNTOS
--- REPETICIÓN INFINITA + ANTI-BUG (4 REINTENTOS)
+-- SISTEMA TWEEN FAR1.json
+-- LOOP INFINITO + ANTI-BUG (4 REINTENTOS)
 ---------------------------------------------------------
 
 if not isfolder("FAR") then
@@ -225,7 +220,6 @@ local PAUSE_POINTS = {
     [577] = true
 }
 
--- Cargar ruta
 local function LoadRoute()
     local content = readfile(RouteFile)
     local data = HttpService:JSONDecode(content)
@@ -254,14 +248,11 @@ local function SmoothMoveTo(pos)
         task.wait(step)
     end
 
-    -- Validación de cercanía (anti-bug)
     return (hrp.Position - pos).Magnitude <= 5
 end
 
-
 ---------------------------------------------------------
--- EJECUTOR DEL TWEEN SIN LASTPOINT
--- CICLO INFINITO + REINTENTOS
+-- EJECUTOR DEL TWEEN (LOOP INFINITO + REINTENTOS)
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -288,7 +279,6 @@ task.spawn(function()
                     retries += 1
                     task.wait(0.2)
 
-                    -- volver 1 punto atrás si existe
                     if i > 1 then
                         local prev = route[i-1]
                         hrp.CFrame = CFrame.new(prev.X, prev.Y, prev.Z)
@@ -305,7 +295,6 @@ task.spawn(function()
     end
 end)
 
-
 ---------------------------------------------------------
 -- ANTI AFK
 ---------------------------------------------------------
@@ -316,4 +305,4 @@ task.spawn(function()
     ))()
 end)
 
-print("SCRIPT FINAL ✔ SIN lastpoint ✔ LOOP INFINITO ✔ REINTENTOS ✔")
+print("SCRIPT FINAL ✔ CORREGIDO ✔ LOOP ✔ ESTABLE ✔")
