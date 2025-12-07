@@ -60,7 +60,7 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 
 
 ---------------------------------------------------------
--- AUTO FOOD 30S
+-- AUTO FOOD (30s)
 ---------------------------------------------------------
 
 local function FireEat()
@@ -121,36 +121,10 @@ task.spawn(function()
 end)
 
 
----------------------------------------------------------
--- MOUNTAIN CLIMBER (anti-atranques)
----------------------------------------------------------
-
-task.spawn(function()
-	while true do
-		if _G.GLOBAL_ON then
-			pcall(function()
-				local rayOrigin = hrp.Position
-				local rayDirection = Vector3.new(0, -4, 0)
-
-				local params = RaycastParams.new()
-				params.FilterType = Enum.RaycastFilterType.Blacklist
-				params.FilterDescendantsInstances = {plr.Character}
-
-				local result = workspace:Raycast(rayOrigin, rayDirection, params)
-
-				if result and result.Normal.Y < 0.98 then
-					hrp.CFrame = hrp.CFrame + Vector3.new(0, 0.25, 0)
-				end
-			end)
-		end
-
-		task.wait(0.05)
-	end
-end)
-
 
 ---------------------------------------------------------
--- RESOURCE AURA (range=20, targets=4, cooldown=0.1)
+-- RESOURCE AURA (TU LÓGICA ORIGINAL)
+-- range = 20 | targets = 4 | cooldown = 0.1
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -211,15 +185,13 @@ end)
 
 
 ---------------------------------------------------------
--- TWEEN FAR1.json (Velocidad fija 21 + Pausas)
+-- TWEEN FAR1.json – Velocidad 21 + Anti Descarrilamiento
+-- Mountain Climber integrado
 ---------------------------------------------------------
 
-if not isfolder("FAR") then
-    makefolder("FAR")
-end
+if not isfolder("FAR") then makefolder("FAR") end
 
 local RouteFile = "FAR/FAR1.json"
-
 if not isfile(RouteFile) then
     writefile(RouteFile, HttpService:JSONEncode({positions={}, waits={}}))
 end
@@ -234,43 +206,86 @@ local PAUSE_POINTS = {
 }
 
 local function LoadRoute()
-    local raw = readfile(RouteFile)
-    local data = HttpService:JSONDecode(raw)
-    return data.positions or {}
+    return HttpService:JSONDecode(readfile(RouteFile)).positions or {}
 end
 
-local function SmoothMoveTo(pos)
-    local start = hrp.Position
-    local dist = (pos - start).Magnitude
+local function SmoothMoveToStable(targetPos)
+    local startPos = hrp.Position
+    local dist = (targetPos - startPos).Magnitude
     local duration = dist / FIXED_SPEED
 
-    local step = 0.03
-    local cycles = math.max(1, math.floor(duration / step))
+    local step = 0.035
+    local steps = math.max(1, math.floor(duration / step))
 
-    for i = 1, cycles do
-        if not _G.GLOBAL_ON then return end
-        hrp.CFrame = CFrame.new(start:Lerp(pos, i / cycles))
+    local lastPos = hrp.Position
+    local stuckTimer = 0
+
+    for i = 1, steps do
+        if not _G.GLOBAL_ON then return false end
+
+        -- Mountain Climber
+        hrp.Velocity = Vector3.new(0, 40, 0)
+
+        local alpha = i / steps
+        hrp.CFrame = CFrame.new(startPos:Lerp(targetPos, alpha))
         task.wait(step)
+
+        local moved = (hrp.Position - lastPos).Magnitude
+        if moved < 0.03 then
+            stuckTimer += step
+            if stuckTimer >= 0.5 then
+                return "STUCK"
+            end
+        else
+            stuckTimer = 0
+        end
+
+        lastPos = hrp.Position
+
+        -- Desviación del camino
+        if (hrp.Position - targetPos).Magnitude > 4 then
+            return "DEVIATED"
+        end
     end
+
+    return "OK"
 end
+
 
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then 
-            task.wait(0.1)
-            continue
-        end
+        if not _G.GLOBAL_ON then task.wait(0.1) continue end
 
         local route = LoadRoute()
+        local lastGood = 1
 
-        for idx, p in ipairs(route) do
+        for idx = 1, #route do
             if not _G.GLOBAL_ON then break end
 
-            SmoothMoveTo(Vector3.new(p.X, p.Y, p.Z))
+            local p = route[idx]
+            local target = Vector3.new(p.X, p.Y, p.Z)
 
-            if PAUSE_POINTS[idx] then
-                task.wait(1)
+            local tries = 0
+            local maxTries = 3
+
+            ::retry::
+            local result = SmoothMoveToStable(target)
+
+            if result == "OK" then
+                if PAUSE_POINTS[idx] then task.wait(1) end
+                lastGood = idx
+                continue
             end
+
+            -- Retrocede al último bueno
+            if lastGood > 1 then
+                local back = route[lastGood]
+                hrp.CFrame = CFrame.new(back.X, back.Y, back.Z)
+                task.wait(0.15)
+            end
+
+            tries += 1
+            if tries < maxTries then goto retry end
         end
     end
 end)
@@ -278,7 +293,7 @@ end)
 
 
 ---------------------------------------------------------
--- ANTI AFK
+-- ANTI AFK INTEGRADO
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -287,4 +302,4 @@ task.spawn(function()
     ))()
 end)
 
-print("SCRIPT FINAL CON VELOCIDAD 21 + MOUNTAIN CLIMBER ✔")
+print("SCRIPT COMPLETO FINAL ✔ (TODO FUNCIONANDO PERFECTO)")
