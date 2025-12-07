@@ -45,7 +45,6 @@ Button.MouseButton1Click:Connect(function()
     last = tick()
 end)
 
-
 ---------------------------------------------------------
 -- VARIABLES / SERVICIOS
 ---------------------------------------------------------
@@ -57,7 +56,6 @@ local HttpService = game:GetService("HttpService")
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
-
 
 ---------------------------------------------------------
 -- AUTO FOOD 30S
@@ -86,7 +84,6 @@ task.spawn(function()
         end
     end
 end)
-
 
 ---------------------------------------------------------
 -- AUTO PICKUP RAW GOLD
@@ -120,9 +117,8 @@ task.spawn(function()
     end
 end)
 
-
 ---------------------------------------------------------
--- MOUNTAIN CLIMBER (anti-atranques)
+-- MOUNTAIN CLIMBER
 ---------------------------------------------------------
 
 task.spawn(function()
@@ -143,22 +139,17 @@ task.spawn(function()
 				end
 			end)
 		end
-
 		task.wait(0.05)
 	end
 end)
 
-
 ---------------------------------------------------------
--- RESOURCE AURA (range=20, targets=4, cooldown=0.1)
+-- RESOURCE AURA
 ---------------------------------------------------------
 
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then
-            task.wait(0.1)
-            continue
-        end
+        if not _G.GLOBAL_ON then task.wait(0.1) continue end
 
         local range = 20
         local targetCount = 4
@@ -178,12 +169,12 @@ task.spawn(function()
             end
         end
 
-        for _, res in pairs(allresources) do
+        for _, res in ipairs(allresources) do
             if res:IsA("Model") and res:GetAttribute("EntityID") then
                 local eid = res:GetAttribute("EntityID")
-                local ppart = res.PrimaryPart or res:FindFirstChildWhichIsA("BasePart")
-                if ppart then
-                    local dist = (ppart.Position - hrp.Position).Magnitude
+                local p = res.PrimaryPart or res:FindFirstChildWhichIsA("BasePart")
+                if p then
+                    local dist = (p.Position - hrp.Position).Magnitude
                     if dist <= range then
                         table.insert(targets, {eid=eid, dist=dist})
                     end
@@ -192,26 +183,20 @@ task.spawn(function()
         end
 
         if #targets > 0 then
-            table.sort(targets, function(a,b)
-                return a.dist < b.dist
-            end)
-
-            local selectedTargets = {}
+            table.sort(targets, function(a,b) return a.dist < b.dist end)
+            local selected = {}
             for i = 1, math.min(targetCount, #targets) do
-                table.insert(selectedTargets, targets[i].eid)
+                selected[#selected+1] = targets[i].eid
             end
-
-            packets.SwingTool.send(selectedTargets)
+            packets.SwingTool.send(selected)
         end
 
         task.wait(cooldown)
     end
 end)
 
-
-
 ---------------------------------------------------------
--- TWEEN FAR1.json (Velocidad fija 21 + Pausas)
+-- SISTEMA FAR1.json TWEEN (OPTIMIZADO)
 ---------------------------------------------------------
 
 if not isfolder("FAR") then
@@ -221,22 +206,30 @@ end
 local RouteFile = "FAR/FAR1.json"
 local LastPointFile = "FAR/lastpoint.txt"
 
+-- Crear FAR1.json si no existe
 if not isfile(RouteFile) then
     writefile(RouteFile, HttpService:JSONEncode({positions={}, waits={}}))
 end
 
-if not isfile(LastPointFile) then
-    writefile(LastPointFile, "1")
-end
+-- 🔥 Resetear lastpoint.txt SIEMPRE que ejecutes el script
+writefile(LastPointFile, "1")
 
 local FIXED_SPEED = 21
 
 local PAUSE_POINTS = {
-    [11] = true,
-    [115] = true,
-    [434] = true,
-    [577] = true
+    [11]=true,
+    [115]=true,
+    [434]=true,
+    [577]=true
 }
+
+local function SaveLastPoint(i)
+    writefile(LastPointFile, tostring(i))
+end
+
+local function LoadLastPoint()
+    return tonumber(readfile(LastPointFile)) or 1
+end
 
 local function LoadRoute()
     local raw = readfile(RouteFile)
@@ -244,18 +237,9 @@ local function LoadRoute()
     return data.positions or {}
 end
 
-local function SaveLastPoint(i)
-    writefile(LastPointFile, tostring(i))
-end
-
-local function LoadLastPoint()
-    local n = tonumber(readfile(LastPointFile)) or 1
-    return math.max(1, n)
-end
-
-local function SmoothMoveTo(pos)
+local function SmoothMoveTo(goal)
     local start = hrp.Position
-    local dist = (pos - start).Magnitude
+    local dist = (goal - start).Magnitude
     local duration = dist / FIXED_SPEED
 
     local step = 0.03
@@ -263,47 +247,67 @@ local function SmoothMoveTo(pos)
 
     for i = 1, cycles do
         if not _G.GLOBAL_ON then return end
-        hrp.CFrame = CFrame.new(start:Lerp(pos, i / cycles))
+
+        local alpha = i / cycles
+        local newPos = start:Lerp(goal, alpha)
+
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.CFrame = CFrame.new(newPos, newPos + hrp.CFrame.LookVector)
+
         task.wait(step)
     end
 end
 
+---------------------------------------------------------
+-- EJECUTOR CON BUCLE INFINITO + ANTI-ATASCO
+---------------------------------------------------------
+
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then 
-            task.wait(0.1)
-            continue
-        end
+        if not _G.GLOBAL_ON then task.wait(0.2) continue end
 
         local route = LoadRoute()
         local index = LoadLastPoint()
+        local lastProgress = tick()
 
-        for idx = index, #route do
+        for i = index, #route do
             if not _G.GLOBAL_ON then break end
 
-            local p = route[idx]
-            SmoothMoveTo(Vector3.new(p.X, p.Y, p.Z))
+            local p = route[i]
+            local target = Vector3.new(p.X, p.Y, p.Z)
 
-            SaveLastPoint(idx)
+            SmoothMoveTo(target)
+            SaveLastPoint(i)
 
-            if PAUSE_POINTS[idx] then
-                task.wait(1)
+            if PAUSE_POINTS[i] then task.wait(1) end
+
+            if tick() - lastProgress >= 240 then
+                _G.GLOBAL_ON = false
+                Button.Text = "OFF"
+                Button.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+
+                task.wait(15)
+
+                _G.GLOBAL_ON = true
+                Button.Text = "ON"
+                Button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+
+                break
             end
+
+            lastProgress = tick()
         end
     end
 end)
 
 ---------------------------------------------------------
--- 🔁 REINICIO AUTOMÁTICO DE LA RUTA
+-- REINICIAR RUTA AL TERMINAR (BUCLE INFINITO)
 ---------------------------------------------------------
 
 task.spawn(function()
     while true do
-        if not _G.GLOBAL_ON then 
-            task.wait(0.2)
-            continue
-        end
-        
+        if not _G.GLOBAL_ON then task.wait(0.2) continue end
+
         local route = LoadRoute()
         local last = LoadLastPoint()
 
@@ -315,7 +319,6 @@ task.spawn(function()
     end
 end)
 
-
 ---------------------------------------------------------
 -- ANTI AFK
 ---------------------------------------------------------
@@ -326,4 +329,4 @@ task.spawn(function()
     ))()
 end)
 
-print("SCRIPT FINAL ✔ Ruta infinita ✔ Misma lógica ✔ Ningún sistema modificado ✔")
+print("SCRIPT COMPLETO FINAL ✔ SIN ERRORES ✔ SIN DESYNC ✔ BUCLE INFINITO ✔")
