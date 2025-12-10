@@ -1,4 +1,3 @@
--- PLACE LOCK SYSTEM (HACKER STYLE ERROR SCREEN)
 local allowedPlace = 606849621
 
 if game.PlaceId ~= allowedPlace then
