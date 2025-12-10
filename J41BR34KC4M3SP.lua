@@ -1,3 +1,65 @@
+-- PLACE LOCK SYSTEM (HACKER STYLE ERROR SCREEN)
+local allowedPlace = 606849621
+
+if game.PlaceId ~= allowedPlace then
+    local CoreGui = game:GetService("CoreGui")
+    local TweenService = game:GetService("TweenService")
+
+    local Screen = Instance.new("ScreenGui", CoreGui)
+    Screen.IgnoreGuiInset = true
+    Screen.ResetOnSpawn = false
+
+    local Frame = Instance.new("Frame", Screen)
+    Frame.Size = UDim2.new(1,0,1,0)
+    Frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+
+    local Title = Instance.new("TextLabel", Frame)
+    Title.Size = UDim2.new(1,0,0,100)
+    Title.Position = UDim2.new(0,0,0.3,0)
+    Title.BackgroundTransparency = 1
+    Title.Font = Enum.Font.Arcade
+    Title.TextScaled = true
+    Title.TextColor3 = Color3.fromRGB(0,255,0)
+    Title.Text = "ACCESS DENIED"
+
+    local Msg = Instance.new("TextLabel", Frame)
+    Msg.Size = UDim2.new(1,0,0,80)
+    Msg.Position = UDim2.new(0,0,0.45,0)
+    Msg.BackgroundTransparency = 1
+    Msg.Font = Enum.Font.Code
+    Msg.TextScaled = true
+    Msg.TextColor3 = Color3.fromRGB(0,180,0)
+    Msg.Text = "This script is not compatible with this experience."
+
+    local Glitch = Instance.new("TextLabel", Frame)
+    Glitch.Size = UDim2.new(1,0,0,60)
+    Glitch.Position = UDim2.new(0,0,0.58,0)
+    Glitch.BackgroundTransparency = 1
+    Glitch.Font = Enum.Font.Code
+    Glitch.TextScaled = true
+    Glitch.TextColor3 = Color3.fromRGB(0,255,0)
+    Glitch.Text = ">> SYSTEM PROTECTION ENABLED <<"
+
+    -- glitch animation
+    task.spawn(function()
+        while true do
+            task.wait(math.random(5,12)/100)
+            Title.Position = UDim2.new(0, math.random(-3,3), 0.3, math.random(-3,3))
+            Msg.Position = UDim2.new(0, math.random(-3,3), 0.45, math.random(-3,3))
+            Glitch.Position = UDim2.new(0, math.random(-3,3), 0.58, math.random(-3,3))
+            task.wait(0.05)
+            Title.Position = UDim2.new(0,0,0.3,0)
+            Msg.Position = UDim2.new(0,0,0.45,0)
+            Glitch.Position = UDim2.new(0,0,0.58,0)
+        end
+    end)
+
+    -- fade-in effect
+    Frame.BackgroundTransparency = 1
+    TweenService:Create(Frame, TweenInfo.new(1.2), {BackgroundTransparency = 0}):Play()
+
+    return
+end
 ---------------------------------------------------------
 -- FULLSCREEN LOADING UI (0% → 100%)
 ---------------------------------------------------------
