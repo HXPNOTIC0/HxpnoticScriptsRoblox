@@ -1,1 +1,268 @@
-if (game.PlaceId~=606849621) then return;end getgenv().Camlock_Settings={PrimaryPart="HumanoidRootPart",SecondaryPart="Head",HeadWeight=0.75 -0 };local v1=game:GetService("Players");local v2=game:GetService("RunService");local v3=v1.LocalPlayer;local v4=workspace.CurrentCamera;local function v5() local v38=v3:FindFirstChild("PlayerGui");if  not v38 then local v64=997 -(915 + 82) ;while true do if (v64==0) then repeat task.wait();until v3:FindFirstChild("PlayerGui") v38=v3.PlayerGui;break;end end end return v38;end local v6=false;local v7=nil;local v8=2 -1 ;local v9=Color3.fromRGB(0,149 + 106 ,0);local v10={};local v11={Police=Color3.fromRGB(0 -0 ,1357 -(1069 + 118) ,578 -323 ),Criminal=Color3.fromRGB(557 -302 ,0,0 + 0 ),Prisoner=Color3.fromRGB(453 -198 ,140,0 + 0 )};local function v12(v39) local v40=791 -(368 + 423) ;while true do if (v40==1) then return Color3.fromRGB(255,801 -546 ,273 -(10 + 8) );end if (v40==(0 -0)) then if (v6 and (v7==v39)) then return v9;end if (v39.Team and v11[v39.Team.Name]) then return v11[v39.Team.Name];end v40=1;end end end local function v13(v41) local v42=442 -(416 + 26) ;local v43;while true do if (v42==2) then v43.FillTransparency=0.25 -0 ;v43.OutlineTransparency=0.25 + 0 ;v42=4 -1 ;end if (v42==0) then if (v41==v3) then return;end v43=Instance.new("Highlight");v42=1;end if (v42==(441 -(145 + 293))) then v43.Parent=v5();v10[v41]=v43;v42=4;end if (v42==(434 -(44 + 386))) then return v43;end if (v42==(1487 -(998 + 488))) then v43.Name="PERMA_ESP";v43.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop;v42=1 + 1 ;end end end local function v14(v44) local v45=0 + 0 ;local v46;local v47;while true do if (v45==0) then if (v44==v3) then return;end v46=v10[v44];v45=1;end if (1==v45) then if ( not v46 or  not v46.Parent or  not v46:IsDescendantOf(game) or (v46.Adornee==nil)) then local v89=0;while true do if (v89==(772 -(201 + 571))) then v10[v44]=nil;v46=v13(v44);break;end end end if v44.Character then v46.Adornee=v44.Character;end v45=2;end if (v45==2) then v47=v12(v44);v46.FillColor=v47;v45=1141 -(116 + 1022) ;end if ((12 -9)==v45) then v46.OutlineColor=v47;break;end end end task.spawn(function() while true do local v59=0 + 0 ;while true do if (0==v59) then for v92,v93 in ipairs(v1:GetPlayers()) do if (v93~=v3) then v14(v93);end end task.wait(0.5 -0 );break;end end end end);local function v15(v48) v48.CharacterAdded:Connect(function() local v60=0 -0 ;while true do if (v60==(859 -(814 + 45))) then task.wait();v14(v48);break;end end end);end for v49,v50 in ipairs(v1:GetPlayers()) do local v51=0;while true do if ((0 -0)==v51) then v15(v50);v14(v50);break;end end end v1.PlayerAdded:Connect(function(v52) local v53=0 + 0 ;while true do if (v53==(1 + 0)) then v14(v52);break;end if (0==v53) then task.wait();v15(v52);v53=1;end end end);local function v16(v54) local v55=885 -(261 + 624) ;while true do if (v55==(0 -0)) then if ( not v54.Team or  not v3.Team) then return false;end if (v3.Team.Name=="Police") then return (v54.Team.Name=="Criminal") or (v54.Team.Name=="Prisoner") ;else return v54.Team.Name=="Police" ;end break;end end end local function v17() local v56,v57=nil,math.huge;local v58=Vector2.new(v4.ViewportSize.X/(1082 -(1020 + 60)) ,v4.ViewportSize.Y/2 );for v61,v62 in ipairs(v1:GetPlayers()) do if ((v62~=v3) and v16(v62) and v62.Character and v62.Character:FindFirstChild("HumanoidRootPart")) then local v80=0;local v81;local v82;local v83;while true do if (v80==0) then v81=v62.Character.HumanoidRootPart.Position;v82,v83=v4:WorldToViewportPoint(v81);v80=1424 -(630 + 793) ;end if (v80==(3 -2)) then if v83 then local v104=0 -0 ;local v105;while true do if (v104==0) then v105=(Vector2.new(v82.X,v82.Y) -v58).Magnitude;if (v105<v57) then v57=v105;v56=v62;end break;end end end break;end end end end return v56;end local function v18() if (v8==(1 + 0)) then getgenv().Camlock_Settings.HeadWeight+=(0.002 -0) if (getgenv().Camlock_Settings.HeadWeight>=0.8) then v8= -1;end else local v65=1747 -(760 + 987) ;while true do if (v65==(1913 -(1789 + 124))) then getgenv().Camlock_Settings.HeadWeight-=(766.002 -(745 + 21)) if (getgenv().Camlock_Settings.HeadWeight<=(0.7 + 0)) then v8=2 -1 ;end break;end end end end v2.RenderStepped:Connect(function() if (v6 and v7 and v7.Character) then local v66=v7.Character:FindFirstChild("HumanoidRootPart");local v67=v7.Character:FindFirstChild("Head");if (v66 and v67) then local v84=0;local v85;local v86;while true do if (v84==1) then v86=(v67.Position * v85) + (v66.Position * (1 -v85)) ;v4.CFrame=CFrame.new(v4.CFrame.Position,v86);break;end if (v84==(0 -0)) then v18();v85=getgenv().Camlock_Settings.HeadWeight;v84=1 + 0 ;end end end end end);local v19=Instance.new("ScreenGui");v19.Name="CamlockGUI";v19.ResetOnSpawn=false;v19.Parent=v5();local v23=Instance.new("TextButton");v23.Size=UDim2.new(0,170,0 + 0 ,1115 -(87 + 968) );v23.AnchorPoint=Vector2.new(4 -3 ,0 + 0 );v23.Position=UDim2.new(1, -(203 -113),1413 -(447 + 966) ,13 -8 );v23.Text="HXPNOTIC";v23.TextScaled=true;v23.Font=Enum.Font.Code;v23.BackgroundColor3=Color3.fromRGB(1847 -(1703 + 114) ,731 -(376 + 325) ,49 -19 );v23.BackgroundTransparency=0.75 -0 ;v23.TextColor3=Color3.fromRGB(255,73 + 182 ,561 -306 );v23.TextTransparency=14.5 -(9 + 5) ;v23.BorderSizePixel=0;v23.Parent=v19;Instance.new("UICorner",v23).CornerRadius=UDim.new(376 -(85 + 291) ,1277 -(243 + 1022) );v23.MouseButton1Click:Connect(function() if  not v6 then local v68=v17();if v68 then local v87=0;while true do if (v87==(3 -2)) then v23.Text="  ON  ";v14(v7);break;end if (v87==(0 + 0)) then v6=true;v7=v68;v87=1181 -(1123 + 57) ;end end end else v6=false;if v7 then v14(v7);end v7=nil;v23.Text="  OFF  ";end end);task.spawn(function() while true do local v63=0 + 0 ;while true do if (v63==(254 -(163 + 91))) then task.wait(1990 -(1869 + 61) );for v94,v95 in pairs(v10) do if (v95 and v95:IsDescendantOf(game)) then pcall(function() v95:Destroy();end);end v10[v94]=nil;end v63=1;end if (v63==(1 + 0)) then for v97,v98 in ipairs(v1:GetPlayers()) do if (v98~=v3) then v14(v98);end end if (v6 and v7) then v14(v7);end break;end end end end);
+-- CAMLOCK HARD REBUILD V.03 (ALEX)
+if game.PlaceId ~= 606849621 then return end
+
+--------------------------------------------------
+-- SETTINGS
+--------------------------------------------------
+getgenv().Camlock_Settings = {
+    PrimaryPart = "HumanoidRootPart",
+    SecondaryPart = "Head",
+    HeadWeight = 0.75
+}
+
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+--------------------------------------------------
+-- SAFE GUI (ANTI CLEAN)
+--------------------------------------------------
+local function getSafeGui()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then
+        repeat task.wait() until LocalPlayer:FindFirstChild("PlayerGui")
+        pg = LocalPlayer.PlayerGui
+    end
+    return pg
+end
+
+--------------------------------------------------
+-- CAMLOCK VARIABLES
+--------------------------------------------------
+local camlockEnabled = false
+local currentTarget = nil
+local direction = 1
+local TARGET_COLOR = Color3.fromRGB(0,255,0)
+
+--------------------------------------------------
+-- ESP CORE (IMMORTAL)
+--------------------------------------------------
+local ESPs = {}
+
+local JailbreakTeams = {
+    Police = Color3.fromRGB(0,170,255),
+    Criminal = Color3.fromRGB(255,0,0),
+    Prisoner = Color3.fromRGB(255,140,0)
+}
+
+local function getTeamColor(plr)
+    if camlockEnabled and currentTarget == plr then
+        return TARGET_COLOR
+    end
+    if plr.Team and JailbreakTeams[plr.Team.Name] then
+        return JailbreakTeams[plr.Team.Name]
+    end
+    return Color3.fromRGB(255,255,255)
+end
+
+local function buildESP(plr)
+    if plr == LocalPlayer then return end
+
+    local esp = Instance.new("Highlight")
+    esp.Name = "PERMA_ESP"
+    esp.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    esp.FillTransparency = 0.25
+    esp.OutlineTransparency = 0.25
+    esp.Parent = getSafeGui()
+
+    ESPs[plr] = esp
+    return esp
+end
+
+local function forceESP(plr)
+    if plr == LocalPlayer then return end
+
+    local esp = ESPs[plr]
+
+    if not esp
+    or not esp.Parent
+    or not esp:IsDescendantOf(game)
+    or esp.Adornee == nil then
+        ESPs[plr] = nil
+        esp = buildESP(plr)
+    end
+
+    if plr.Character then
+        esp.Adornee = plr.Character
+    end
+
+    local color = getTeamColor(plr)
+    esp.FillColor = color
+    esp.OutlineColor = color
+end
+
+--------------------------------------------------
+-- WATCHDOG SUAVE (ESP INMEDIATO)
+--------------------------------------------------
+task.spawn(function()
+    while true do
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                forceESP(plr)
+            end
+        end
+        task.wait(0.5)
+    end
+end)
+
+--------------------------------------------------
+-- PLAYER / CHARACTER HOOKS
+--------------------------------------------------
+local function hookCharacter(plr)
+    plr.CharacterAdded:Connect(function()
+        task.wait()
+        forceESP(plr)
+    end)
+end
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    hookCharacter(plr)
+    forceESP(plr)
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    task.wait()
+    hookCharacter(plr)
+    forceESP(plr)
+end)
+
+--------------------------------------------------
+-- CAMLOCK LOGIC
+--------------------------------------------------
+local function isValidEnemy(plr)
+    if not plr.Team or not LocalPlayer.Team then return false end
+    if LocalPlayer.Team.Name == "Police" then
+        return plr.Team.Name == "Criminal" or plr.Team.Name == "Prisoner"
+    else
+        return plr.Team.Name == "Police"
+    end
+end
+
+local function getClosestPlayerToCenter()
+    local closest, shortest = nil, math.huge
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer
+        and isValidEnemy(plr)
+        and plr.Character
+        and plr.Character:FindFirstChild("HumanoidRootPart") then
+
+            local pos = plr.Character.HumanoidRootPart.Position
+            local point, visible = Camera:WorldToViewportPoint(pos)
+
+            if visible then
+                local dist = (Vector2.new(point.X, point.Y) - center).Magnitude
+                if dist < shortest then
+                    shortest = dist
+                    closest = plr
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+local function updateHeadWeight()
+    if direction == 1 then
+        getgenv().Camlock_Settings.HeadWeight += 0.002
+        if getgenv().Camlock_Settings.HeadWeight >= 0.8 then
+            direction = -1
+        end
+    else
+        getgenv().Camlock_Settings.HeadWeight -= 0.002
+        if getgenv().Camlock_Settings.HeadWeight <= 0.7 then
+            direction = 1
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if camlockEnabled and currentTarget and currentTarget.Character then
+        local hrp = currentTarget.Character:FindFirstChild("HumanoidRootPart")
+        local head = currentTarget.Character:FindFirstChild("Head")
+
+        if hrp and head then
+            updateHeadWeight()
+            local w = getgenv().Camlock_Settings.HeadWeight
+            local blend = head.Position * w + hrp.Position * (1 - w)
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, blend)
+        end
+    end
+end)
+
+--------------------------------------------------
+-- GUI CAMLOCK (DERECHA + MÁS ABAJO)
+--------------------------------------------------
+local gui = Instance.new("ScreenGui")
+gui.Name = "CamlockGUI"
+gui.ResetOnSpawn = false
+gui.Parent = getSafeGui()
+
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0,170,0,60)
+btn.AnchorPoint = Vector2.new(1,0)
+btn.Position = UDim2.new(1,-90,0,5) -- DERECHA + ABAJO
+btn.Text = "HXPNOTIC"
+btn.TextScaled = true
+btn.Font = Enum.Font.Code
+btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+btn.BackgroundTransparency = 0.75
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+btn.TextTransparency = 0.5
+btn.BorderSizePixel = 0
+btn.Parent = gui
+
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
+
+btn.MouseButton1Click:Connect(function()
+    if not camlockEnabled then
+        local target = getClosestPlayerToCenter()
+        if target then
+            camlockEnabled = true
+            currentTarget = target
+            btn.Text = "  ON  "
+            forceESP(currentTarget)
+        end
+    else
+        camlockEnabled = false
+        if currentTarget then
+            forceESP(currentTarget)
+        end
+        currentTarget = nil
+        btn.Text = "  OFF  "
+    end
+end)
+
+--------------------------------------------------
+-- 🔒 SEGURO GLOBAL: REBUILD ESP CADA 1 MINUTO
+--------------------------------------------------
+task.spawn(function()
+    while true do
+        task.wait(60)
+
+        for plr, esp in pairs(ESPs) do
+            if esp and esp:IsDescendantOf(game) then
+                pcall(function()
+                    esp:Destroy()
+                end)
+            end
+            ESPs[plr] = nil
+        end
+
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                forceESP(plr)
+            end
+        end
+
+        if camlockEnabled and currentTarget then
+            forceESP(currentTarget)
+        end
+    end
+end)
